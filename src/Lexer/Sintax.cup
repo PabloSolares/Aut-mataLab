@@ -1,84 +1,450 @@
 package Lexer;
 import java_cup.runtime.Symbol;
+import java.util.ArrayList;
+import Modelo.AFD;
+import Lexer.AFDContent;
+import Lexer.APContent;
+
 parser code  
 {:
+    
+
+    public static ArrayList<AFD> listaAFD = new ArrayList<>();
+    public ArrayList<AFD> getListaAFD(){
+        return listaAFD;
+    }
     private Symbol s;
     public void syntax_error(Symbol s){
-        this.s = s;
+        String lexeme = (s.value != null) ? s.value.toString() : "EOF";
+        
+        Modelo.ModeloMenu.ListaErrores.add(new Modelo.Errors("Sintactico - Recuperado", lexeme, s.left+1 , s.right));
+        
     }
 
-    public Symbol getS(){
-        return this.s;
+    public void getS(Symbol s) throws java.lang.Exception {
+        Modelo.ModeloMenu.ListaErrores.add(new Modelo.Errors("Sintactico - Sin recuperacion", (String)s.value, s.left+1 , s.right));
     }
+
+    
 
 :};
+action code
+{::};
+terminal String ID;
+terminal String INTEGER;
+terminal String HASTAG;
+terminal String DOLLAR;
+terminal String STRING;
+ 
+terminal LESS, R_AFD, R_NAME, EQUAL, GREATHER, COLON,R_AP, KEY_OPEN, KEY_CLOSE, SEMICOLON, PROD, OR, CLOSE, R_TRANSICIONES, PAR_OPEN, PAR_CLOSE ,DOT, COMMA,QUOTATION, ERROR;
+non terminal PROGRAM, SYMBOLS, Syntax_AFD, Syntax_AP_P , AFD_CLOSE, Syntax_AP, AP_CLOSE ;
 
-terminal LESS, R_AFD, R_NAME, EQUAL, STRING, GREATHER, COLON, ID,R_AP, KEY_OPEN, KEY_CLOSE, SEMICOLON, PROD, OR, CLOSE, R_TRANSICIONES, PAR_OPEN, PAR_CLOSE, DOLLAR, HASTAG, INTEGER ,DOT, COMMA,QUOTATION, ERROR;
-non terminal PROGRAM, SYMBOLS,LIST_STACK_AP,STATE_STACK_AP,LIST_STACKP_AP, Syntax_AFD, Syntax_AP_P , LIST_TRANSATIONS_AP, LIST_TRANSACTIONSP_AP, LIST_ID_TRANSACTIONS_AP, ID_TRANSACTIONS_AP,LIST_OR_BEFORE_AP,  CONTENT_AFD, LIST_CONFIG, LIST_CONFIGP, LIST_AFD, ID_ASIGN, LIST_IDS, STATE_ASSING, STATE_ASIGNP, LIST_TRANSATIONS, LIST_TRANSACTIONSP, LIST_ID_TRANSACTIONS, ID_TRANSACTIONS, LIST_OR_BEFORE, LIST_FOLLOWS, STATE_FOLLOWSP, STATE_FOLLOWS, AFD_CLOSE, Syntax_AP, AP_CLOSE, CONTENT_AP ;
+
+non terminal ArrayList<String> LIST_IDS;
+non terminal String STATE_ASSING;
+non terminal ArrayList<String> STATE_ASIGNP;
+non terminal ArrayList<ArrayList<String>> LIST_TRANSATIONS;
+non terminal ArrayList<ArrayList<String>> LIST_TRANSACTIONSP;
+non terminal ArrayList<String> LIST_ID_TRANSACTIONS;
+non terminal ArrayList<String> ID_TRANSACTIONS;
+non terminal ArrayList<String> LIST_FOLLOWS;
+non terminal ArrayList<String> LIST_OR_BEFORE;
+non terminal String STATE_FOLLOWS;
+non terminal ArrayList<String> STATE_FOLLOWSP;
+non terminal AFD AFD_DECLARACION;
+non terminal ArrayList<String[]> LIST_CONFIG;
+non terminal ArrayList<String[]> LIST_CONFIGP;
+non terminal ArrayList<String[]> LIST_AFD;
+non terminal String[] ID_ASIGN;
+
+non terminal AFDContent CONTENT_AFD;
+non terminal APContent  CONTENT_AP;
+non terminal ArrayList<String> LIST_STACK_AP;
+non terminal ArrayList<String> LIST_STACKP_AP;
+non terminal ArrayList<String> STATE_STACK_AP;
+
+non terminal ArrayList<ArrayList<String>> LIST_TRANSATIONS_AP;
+non terminal ArrayList<ArrayList<String>> LIST_TRANSACTIONSP_AP;
+non terminal ArrayList<ArrayList<String>> LIST_ID_TRANSACTIONS_AP;
+non terminal ArrayList<ArrayList<String>> ID_TRANSACTIONS_AP;
+non terminal ArrayList<ArrayList<String>> LIST_OR_BEFORE_AP;
+
 
 start with PROGRAM;
 
-PROGRAM ::= Syntax_AFD | Syntax_AP_P
+
+PROGRAM ::= AFD_DECLARACION | Syntax_AP
 ;
 Syntax_AP_P ::= Syntax_AP
 ;
-Syntax_AFD ::= LESS R_AFD R_NAME EQUAL STRING GREATHER CONTENT_AFD AFD_CLOSE 
+AFD_DECLARACION ::= LESS R_AFD R_NAME EQUAL STRING:nombre GREATHER CONTENT_AFD:contenido AFD_CLOSE
+{:  
+    
+    boolean exists = sintax.listaAFD.stream()
+            .anyMatch(a -> a.getNombre().equals(nombre));
+
+    if(exists){
+        Modelo.ModeloMenu.ListaErrores.add(
+                new Modelo.Errors("Sintactico", 
+                    "El nombre del AFD '" + nombre + "' ya esta en uso", 
+                    nombreleft, nombreright)
+            );
+        RESULT = null;
+    } else {
+        AFD afd = new AFD();
+        afd.setNombre(nombre);
+        
+        for (String e: contenido.getEstados()){
+
+            afd.addEstado(e);
+        }
+
+        for (String a: contenido.getAlfabeto()){
+            afd.addAlfabeto(a);
+        }
+
+        afd.setEstadoInicial(contenido.getEstadoInicial());
+
+        for (String ea: contenido.getEstadosAceptacion()){
+            afd.addEstadoAcept(ea);
+        }
+
+        for(ArrayList<String> tr : contenido.getTransiciones()){
+
+            String origen = tr.get(0);
+
+            for(int i = 1; i< tr.size(); i+=2){
+                String simbolo = tr.get(i);
+                String destino = tr.get(i+1);
+
+
+                afd.addTransicion(origen, simbolo, destino);
+            }
+        }
+        sintax.listaAFD.add(afd);
+
+        RESULT = afd;
+    }
+    
+    
+:}
 ;
-Syntax_AP ::= LESS R_AP R_NAME EQUAL STRING GREATHER CONTENT_AP AP_CLOSE
+
+Syntax_AFD ::= LESS R_AFD R_NAME EQUAL STRING:s GREATHER CONTENT_AFD AFD_CLOSE 
+{:
+    
+:}
 ;
-CONTENT_AFD ::= LIST_CONFIG  R_TRANSICIONES COLON LIST_TRANSATIONS
+Syntax_AP ::= LESS R_AP R_NAME EQUAL STRING:nombre GREATHER CONTENT_AP:contenido AP_CLOSE
+{:
+    
+:}
 ;
-CONTENT_AP ::= LIST_CONFIG  R_TRANSICIONES COLON LIST_TRANSATIONS_AP 
+CONTENT_AFD ::= LIST_CONFIG:cfga  R_TRANSICIONES COLON LIST_TRANSATIONS:listT
+{:
+    
+    AFDContent content = new AFDContent();
+    for(String[] cfg : cfga){
+       
+        String tipo = cfg[0];
+        ArrayList<String> lista = new ArrayList<>();
+        for(int i = 1; i < cfg.length; i++){
+            lista.add(cfg[i]);
+        } 
+        switch(tipo) {
+            case "N": content.getEstados().addAll(lista);  break;
+            case "T": content.getAlfabeto().addAll(lista); break;
+            case "I": content.setEstadoInicial(lista.get(0));break;
+            case "A": content.getEstadosAceptacion().addAll(lista); break;
+        }
+    }
+
+    for (ArrayList<String> t : listT ){
+       
+        content.addTransicion(t);
+    }
+    RESULT = content;
+    
+:}
 ;
-LIST_TRANSATIONS_AP ::= LIST_ID_TRANSACTIONS_AP LIST_TRANSACTIONSP_AP
+CONTENT_AP ::= LIST_CONFIG:lcg  R_TRANSICIONES COLON LIST_TRANSATIONS_AP:listAP
+{:
+    System.out.println("HOLAA DESDE AQUI");
+    APContent contentAP = new APContent();
+    for(String[] cfg : lcg){
+       
+        String tipo = cfg[0];
+        ArrayList<String> lista = new ArrayList<>();
+        for(int i = 1; i < cfg.length; i++){
+            lista.add(cfg[i]);
+        } 
+
+        switch(tipo) {
+            case "N": contentAP.getEstados().addAll(lista);  break;
+            case "T": contentAP.getAlfabeto().addAll(lista); break;
+            case "I": contentAP.setEstadoInicial(lista.get(0));break;
+            case "A": contentAP.getEstadosAceptacion().addAll(lista); break;
+            case "P": contentAP.getSimboloPila().addAll(lista); break;
+        }
+    }
+   
+:} 
 ;
-LIST_TRANSACTIONSP_AP ::= LIST_ID_TRANSACTIONS_AP LIST_TRANSACTIONSP_AP | 
+LIST_TRANSATIONS_AP ::= LIST_ID_TRANSACTIONS_AP:lita LIST_TRANSACTIONSP_AP:litap
+{:
+        System.out.println("HOLAA DESDE AQUI TRANSICIONES 1 ");
+
+    ArrayList<ArrayList<String>> tmp = new ArrayList<ArrayList<String>>();
+    tmp.addAll(lita);
+    if (litap != null){
+        tmp.addAll(litap);
+    }
+    RESULT = tmp;
+:}
 ;
-LIST_ID_TRANSACTIONS_AP ::= ID_TRANSACTIONS_AP
+LIST_TRANSACTIONSP_AP ::= LIST_ID_TRANSACTIONS_AP:lidta LIST_TRANSACTIONSP_AP:lidtap 
+{:
+    System.out.println("HOLAA DESDE AQUI TRANSICIONES 2 ");
+    ArrayList<ArrayList<String>> tmp = new ArrayList<ArrayList<String>>();
+    tmp.addAll(lidta);
+    if (lidtap != null){
+        tmp.addAll(lidtap);
+    }
+    RESULT = tmp;
+:}
+| 
+{:
+    RESULT = new ArrayList<ArrayList<String>>();
+:}
 ;
-ID_TRANSACTIONS_AP ::= ID PAR_OPEN SYMBOLS PAR_CLOSE PROD PAR_OPEN SYMBOLS PAR_CLOSE COMMA SYMBOLS COLON PAR_OPEN SYMBOLS PAR_CLOSE LIST_OR_BEFORE_AP SEMICOLON
+LIST_ID_TRANSACTIONS_AP ::= ID_TRANSACTIONS_AP:ita
+{:
+    System.out.println("HOLAA DESDE AQUI TRANSICIONES 3 ");
+    RESULT = ita;
+:}
 ;
-SYMBOLS ::= ID | DOLLAR | HASTAG
+ID_TRANSACTIONS_AP ::= ID PAR_OPEN SYMBOLS PAR_CLOSE PROD PAR_OPEN SYMBOLS PAR_CLOSE COMMA SYMBOLS COLON PAR_OPEN SYMBOLS PAR_CLOSE LIST_OR_BEFORE_AP:listap SEMICOLON
+{:
+    System.out.println("HOLAA DESDE AQUI TRANSICIONES 3.5 ");
+    ArrayList<ArrayList<String>> tmp = new ArrayList<>();
+    tmp.addAll(listap);
+   
+    RESULT = tmp;
+:}
 ;
-LIST_OR_BEFORE_AP ::= OR LIST_STACK_AP LIST_OR_BEFORE_AP |
+SYMBOLS ::= ID:i {: RESULT = i; :} | DOLLAR:d {: RESULT = d; :} | HASTAG:h {: RESULT = h; :}
+;
+LIST_OR_BEFORE_AP ::= OR LIST_STACK_AP:lap LIST_OR_BEFORE_AP:lobp 
+{:
+    System.out.println("HOLAA DESDE AQUI TRANSICIONES 4 ");
+    ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
+    ArrayList<String> alt = new ArrayList<String>(lap);
+
+    list.add(alt);
+    if (lobp != null){
+        list.addAll(lobp);
+    }
+   
+    RESULT = list;
+:}
+|
+{:
+    RESULT =  new ArrayList<String>();
+:}
+    
 ; 
-LIST_STACK_AP ::= STATE_STACK_AP LIST_STACKP_AP 
+LIST_STACK_AP ::= STATE_STACK_AP:ssa LIST_STACKP_AP:lsap
+{:
+    System.out.println("HOLAA DESDE AQUI STACK 1 ");
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.addAll(ssa);
+    if (lsap != null){
+        tmp.addAll(lsap);
+    }
+   
+    RESULT = tmp;
+:} 
 ;
-LIST_STACKP_AP ::= STATE_STACK_AP LIST_STACKP_AP | 
+LIST_STACKP_AP ::= STATE_STACK_AP:ssa LIST_STACKP_AP:lsap 
+{:
+    System.out.println("HOLAA DESDE AQUI STACK 2 ");
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.addAll(ssa);
+    if (lsap != null){
+        tmp.addAll(lsap);
+    }
+   
+    RESULT = tmp;
+:} 
+| 
+{:
+    RESULT = new ArrayList<ArrayList<String>>();
+:} 
 ;
 STATE_STACK_AP ::= PAR_OPEN SYMBOLS PAR_CLOSE PROD PAR_OPEN SYMBOLS PAR_CLOSE COMMA SYMBOLS COLON PAR_OPEN SYMBOLS PAR_CLOSE 
 ;
-LIST_CONFIG ::= LIST_AFD LIST_CONFIGP
+
+LIST_CONFIG ::= LIST_AFD:cfg LIST_CONFIGP:cfgp
+{:
+    System.out.println("HOLAA DESDE AQUI CONFIG 1 ");
+    ArrayList<String[]> tmp = new ArrayList<>();
+    tmp.addAll(cfg);
+    if(cfgp != null){
+        tmp.addAll(cfgp);
+    }
+    RESULT = tmp;
+:}
 ;
-LIST_CONFIGP ::= LIST_AFD LIST_CONFIGP | 
+LIST_CONFIGP ::= LIST_AFD:cfg LIST_CONFIGP:cfgp 
+{:
+System.out.println("HOLAA DESDE AQUI CONFIG 2 ");
+    ArrayList<String[]> tmp = new ArrayList<>();
+    tmp.addAll(cfg);
+    if(cfgp != null){
+        tmp.addAll(cfgp);
+    }
+    RESULT = tmp;
+:}
+| 
+{:
+    RESULT = new ArrayList<String[]>();
+:}
 ;
-LIST_AFD ::= ID_ASIGN 
+LIST_AFD ::= ID_ASIGN:cfg
+{:
+    ArrayList<String[]> list = new ArrayList<>();
+    list.add(cfg);
+    RESULT = list;
+:}
 ;
-ID_ASIGN ::= ID EQUAL KEY_OPEN LIST_IDS KEY_CLOSE SEMICOLON
+ID_ASIGN ::= ID:i EQUAL KEY_OPEN LIST_IDS:list KEY_CLOSE SEMICOLON
+{:
+    String[] arr = new String[list.size() +1 ];
+    arr[0] = i;
+    
+    for(int idx = 0; idx < list.size(); idx++){
+        arr[idx+1] = list.get(idx);
+    }
+   
+    RESULT = arr;
+    
+:}
 ;
-LIST_IDS ::= STATE_ASSING STATE_ASIGNP
+LIST_IDS ::= STATE_ASSING:s STATE_ASIGNP:p
+{:
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.add(s);
+    if(p != null){
+        tmp.addAll(p);
+    }
+    RESULT = tmp;
+:}
 ;
-STATE_ASSING ::= ID | INTEGER | HASTAG | DOLLAR
+STATE_ASSING ::= ID:i {: RESULT = i; :}| INTEGER:num {: RESULT = num; :} | HASTAG:h {: RESULT = h; :} | DOLLAR:d{: RESULT = d; :}
 ;
-STATE_ASIGNP ::= COMMA STATE_ASSING STATE_ASIGNP | 
+STATE_ASIGNP ::= COMMA STATE_ASSING:s STATE_ASIGNP:p 
+{:
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.add(s);
+    if(p != null){
+        tmp.addAll(p);
+    }
+    RESULT = tmp;
+:} 
+|
+{:
+    RESULT = new ArrayList<String>();
+:}
+ 
 ;
-LIST_TRANSATIONS ::= LIST_ID_TRANSACTIONS LIST_TRANSACTIONSP
+LIST_TRANSATIONS ::= LIST_ID_TRANSACTIONS:h LIST_TRANSACTIONSP:t
+{:
+    ArrayList<ArrayList<String>> tmp = new ArrayList<ArrayList<String>>();
+    tmp.add(h);
+    if (t != null){
+        tmp.addAll(t);
+    }
+    RESULT = tmp;
+:}
 ;
-LIST_TRANSACTIONSP ::= LIST_ID_TRANSACTIONS LIST_TRANSACTIONSP | 
+LIST_TRANSACTIONSP ::= LIST_ID_TRANSACTIONS:h LIST_TRANSACTIONSP:t 
+{:
+    ArrayList<ArrayList<String>> tmp = new ArrayList<ArrayList<String>>();
+    tmp.add(h);
+    if (t != null){
+        tmp.addAll(t);
+    }
+    RESULT = tmp;
+:}
+| 
+{:
+    RESULT =  new ArrayList<ArrayList<String>>();
+:}
 ;
-LIST_ID_TRANSACTIONS ::= ID_TRANSACTIONS
+LIST_ID_TRANSACTIONS ::= ID_TRANSACTIONS:tr
+{:
+    RESULT = tr;
+:}
 ;
-ID_TRANSACTIONS ::= ID PROD LIST_FOLLOWS LIST_OR_BEFORE SEMICOLON
+ID_TRANSACTIONS ::= ID:i PROD LIST_FOLLOWS:f LIST_OR_BEFORE:o SEMICOLON
+{:
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.add(i);
+    if (f != null){
+        tmp.addAll(f);
+    }
+    if (o != null){
+        tmp.addAll(o);
+    }
+    
+    RESULT = tmp;
+:}
 ;
-LIST_OR_BEFORE ::= OR LIST_FOLLOWS LIST_OR_BEFORE | 
+LIST_OR_BEFORE ::= OR LIST_FOLLOWS:f LIST_OR_BEFORE:lf 
+{:
+    ArrayList<String> tmp = new ArrayList<String>();
+
+    tmp.addAll(f);
+    if (lf != null){
+        tmp.addAll(lf);
+    }
+   
+    RESULT = tmp;
+:}
+| 
+{:
+    RESULT =  new ArrayList<String>();
+:}
 ;
-LIST_FOLLOWS ::= STATE_FOLLOWS STATE_FOLLOWSP 
+LIST_FOLLOWS ::= STATE_FOLLOWS:s STATE_FOLLOWSP:sp 
+{:
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.add(s);
+    if (sp != null){
+        tmp.addAll(sp);
+    }
+   
+    RESULT = tmp;
+:}
 ;
-STATE_FOLLOWSP ::= COMMA STATE_FOLLOWS STATE_FOLLOWSP | 
+STATE_FOLLOWSP ::= COMMA STATE_FOLLOWS:sf STATE_FOLLOWSP:sfp
+{:
+    ArrayList<String> tmp = new ArrayList<String>();
+    tmp.add(sf);
+    if (sfp != null){
+        tmp.addAll(sfp);
+    }
+   
+    RESULT = tmp;
+:} 
+| 
+{:
+    RESULT =  new ArrayList<String>();
+:}
 ;
-STATE_FOLLOWS ::= ID | INTEGER 
+STATE_FOLLOWS ::= ID:i {: RESULT = i; :} | INTEGER:num {: RESULT = num; :} 
 ;
-AFD_CLOSE ::= LESS CLOSE R_AFD GREATHER
+AFD_CLOSE ::= LESS CLOSE R_AFD GREATHER 
 ;
 AP_CLOSE ::= LESS CLOSE R_AP GREATHER
 ;

@@ -1,0 +1,12 @@
+<AP Nombre="AP_1"> 
+    N = {I, A, B, C, F};            // Estados 
+    T = {a, b};                     // Alfabeto
+    P = {a, b, #};                   // Símbolos de Pila 
+    I = {I};                        // Estado Inicial                        
+    A = {F};                        // Estados de Aceptación    
+Transiciones: 
+    I ($) -> ($), A : (#); 
+    A (a) -> ($), B : (a); 
+    B (a) -> ($), B : (a); 
+    C (b) -> (a), C : ($); 
+</AP>

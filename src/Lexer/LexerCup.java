@@ -716,12 +716,12 @@ public class LexerCup implements java_cup.runtime.Scanner {
             // fall through
           case 29: break;
           case 2: 
-            { { return new Symbol(sym.ERROR, yyline, yycolumn);}
+            { { return new Symbol(sym.ERROR, yyline, yycolumn,yytext());}
             } 
             // fall through
           case 30: break;
           case 3: 
-            { return new Symbol(sym.ID, yyline, yycolumn);
+            { return new Symbol(sym.ID, yyline, yycolumn,yytext());
             } 
             // fall through
           case 31: break;
@@ -841,7 +841,7 @@ public class LexerCup implements java_cup.runtime.Scanner {
             // fall through
           case 54: break;
           case 27: 
-            { return new Symbol(sym.R_NAME, yyline, yycolumn);
+            { return new Symbol(sym.R_NAME, yyline, yycolumn, yytext());
             } 
             // fall through
           case 55: break;

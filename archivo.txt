@@ -1,11 +1,12 @@
-<AFD Nombre="AFD_1"> 
-    N = {S, A, B, C};            // Estados 
-    T = {0, 1};                      // Alfabeto 
-    I = {S};                           // Estado Inicial 
-    A = {B, C};                     // Estados de Aceptación 
+<AP Nombre="AP_1"> 
+    N = {I, A, B, C, F};            // Estados 
+    T = {a, b};                     // Alfabeto
+    P = {a, b, #};                   // Símbolos de Pila 
+    I = {I};                        // Estado Inicial                        
+    A = {F};                        // Estados de Aceptación    
 Transiciones: 
-    S -> 1, A | 0, B ; 
-    A -> 1, A | 0, B ; 
-    B -> 0, C | 1, A ; 
-    C -> 1, A; 
-</AFD> 
+    I ($) -> ($), A : (#); 
+    A (a) -> ($), B : (a); 
+    B (a) -> ($), B : (a); 
+    C (b) -> (a), C : ($); 
+</AP>

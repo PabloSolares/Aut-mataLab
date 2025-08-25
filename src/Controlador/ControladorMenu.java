@@ -10,6 +10,8 @@ import Lexer.Lexer;
 import Lexer.LexerCup;
 import Lexer.Yytoken;
 import Lexer.sintax;
+import Modelo.AFD;
+import Modelo.Errors;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java_cup.runtime.Symbol;
@@ -44,14 +47,23 @@ public class ControladorMenu {
             String input = this.vista.txtEntrada.getText();
             File file = new File("archivo.txt");
             sintax s = new sintax(new LexerCup(new StringReader(input)));
+            
             try {
-                Symbol result = s.parse();
-                System.out.println("TODO BIEN");   
+                s.parse();  
+                
+                
+                System.out.println("TODO BIEN");
+                ArrayList<AFD> automatas = s.getListaAFD();
+                for (AFD automata : automatas) {
+                    System.out.println(automata.toString());
+                }
                 
             } catch (Exception ex) {
-                Symbol sym = s.getS();
-                System.out.println("Error : " + sym.value + "Columna:" + (sym.right + 1) + "Linea" + (sym.left + 1) );
+                //Symbol sym = s.getS();
+                //System.out.println("Error : " + sym.value + "Columna:" + (sym.right + 1) + "Linea" + (sym.left + 1) );
+                 
             }
+            
             try {
                 PrintWriter write = new PrintWriter(file);
                 write.print(input);
@@ -71,9 +83,18 @@ public class ControladorMenu {
                         Logger.getLogger(ControladorMenu.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     if (token != null) {
-                        System.out.println(token.n_lexeme);
+                        modelo.ingresarToken(token);
                     }
                 } while (token != null);
+                
+                for (Yytoken tokenL : modelo.getListaTokens()) {
+                    //System.out.println(tokenL.toString());
+                }
+                for (Errors errs : modelo.getListaErrores()) {
+                    System.out.println(errs.toString());
+                }
+               
+                
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(ControladorMenu.class.getName()).log(Level.SEVERE, null, ex);
             }

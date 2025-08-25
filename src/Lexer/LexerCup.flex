@@ -32,9 +32,9 @@ EndLineComment = "//" [^\r\n]* {LineTerminator}?
 
 AFD { return new Symbol(sym.R_AFD, yyline, yycolumn, yytext());}
 AP { return new Symbol(sym.R_AP, yyline, yycolumn, yytext());}
-Nombre {return new Symbol(sym.R_NAME, yyline, yycolumn);}
+Nombre {return new Symbol(sym.R_NAME, yyline, yycolumn, yytext());}
 Transiciones { return new Symbol(sym.R_TRANSICIONES, yyline, yycolumn, yytext());}
-{L}({L}|{D})* { return new Symbol(sym.ID, yyline, yycolumn);}
+{L}({L}|{D})* { return new Symbol(sym.ID, yyline, yycolumn,yytext());}
 ("(-"{D}+")")|{D}+ { return new Symbol(sym.INTEGER, yyline, yycolumn, yytext());}
 ";" { return new Symbol(sym.SEMICOLON, yyline, yycolumn, yytext());}
 "<" { return new Symbol(sym.LESS, yyline, yycolumn, yytext());}
@@ -63,4 +63,4 @@ Transiciones { return new Symbol(sym.R_TRANSICIONES, yyline, yycolumn, yytext())
 <COMMENT>[^"*/"]* {/*Ignore*/}
 <COMMENT>"*/" {yybegin(YYINITIAL);}
 
-. {{ return new Symbol(sym.ERROR, yyline, yycolumn);}}
+. {{ return new Symbol(sym.ERROR, yyline, yycolumn,yytext());}}
