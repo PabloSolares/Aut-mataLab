@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+
 /**
  *
  * @author pablo
@@ -19,10 +20,10 @@ public class Principal {
         String ruta = "C:/Users/pablo/Documents/NetBeansProjects/Proyeto1Compi/src/Lexer/Lexer.flex";
         String rutacup = "C:/Users/pablo/Documents/NetBeansProjects/Proyeto1Compi/src/Lexer/LexerCup.flex";
             String[] rutaS = {"-parser", "sintax", "C:/Users/pablo/Documents/NetBeansProjects/Proyeto1Compi/src/Lexer/Sintax.cup"};
-        
+       
         generar(ruta,rutacup, rutaS);
     }
-    
+
     public static void generar(String rutaflex, String rutacup, String[] rutaS) throws IOException, Exception{
         File archivo;
         archivo = new File(rutaflex);

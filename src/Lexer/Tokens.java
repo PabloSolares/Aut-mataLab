@@ -34,5 +34,8 @@ public enum Tokens {
     DOLLAR,
     HASTAG,
     PAR_OPEN,
-    PAR_CLOSE
+    PAR_CLOSE,
+    R_VERAUTOMATAS,
+    R_DESAUTOMATAS
+            
 }

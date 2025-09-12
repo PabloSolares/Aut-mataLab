@@ -2,18 +2,25 @@ package Lexer;
 import java_cup.runtime.Symbol;
 import java.util.ArrayList;
 import Modelo.AFD;
+import Modelo.AP;
+import Modelo.Automata;
+
+
 import Lexer.AFDContent;
 import Lexer.APContent;
 
 parser code  
 {:
+    public static javax.swing.JTextArea textAreaSalida;
     
+    public static ArrayList<Automata> listaAutomatas = new ArrayList<>();
+    public static boolean skipCurrentDeclaration = false;
 
-    public static ArrayList<AFD> listaAFD = new ArrayList<>();
-    public ArrayList<AFD> getListaAFD(){
-        return listaAFD;
+    public ArrayList<Automata> getlistaAutomatas(){
+        return listaAutomatas;
     }
-    private Symbol s;
+
+    
     public void syntax_error(Symbol s){
         String lexeme = (s.value != null) ? s.value.toString() : "EOF";
         
@@ -21,11 +28,10 @@ parser code
         
     }
 
-    public void getS(Symbol s) throws java.lang.Exception {
-        Modelo.ModeloMenu.ListaErrores.add(new Modelo.Errors("Sintactico - Sin recuperacion", (String)s.value, s.left+1 , s.right));
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception {
+        String lexeme = (s.value != null) ? s.value.toString() : "EOF";
+        Modelo.ModeloMenu.ListaErrores.add(new Modelo.Errors("Sintactico - Sin recuperacion", lexeme, s.left+1 , s.right));
     }
-
-    
 
 :};
 action code
@@ -35,9 +41,15 @@ terminal String INTEGER;
 terminal String HASTAG;
 terminal String DOLLAR;
 terminal String STRING;
+terminal R_VERAUTOMATAS;
+terminal R_DESAUTOMATAS;
+
+
+
+
  
-terminal LESS, R_AFD, R_NAME, EQUAL, GREATHER, COLON,R_AP, KEY_OPEN, KEY_CLOSE, SEMICOLON, PROD, OR, CLOSE, R_TRANSICIONES, PAR_OPEN, PAR_CLOSE ,DOT, COMMA,QUOTATION, ERROR;
-non terminal PROGRAM, SYMBOLS, Syntax_AFD, Syntax_AP_P , AFD_CLOSE, Syntax_AP, AP_CLOSE ;
+terminal LESS, R_AFD, R_NAME, EQUAL, GREATHER, COLON,R_AP, KEY_OPEN, KEY_CLOSE, SEMICOLON, PROD, OR, CLOSE, R_TRANSICIONES, PAR_OPEN, PAR_CLOSE , COMMA, DOT,QUOTATION,ERROR ;
+non terminal PROGRAM, Syntax_AP_P , AFD_CLOSE, Syntax_AP, AP_CLOSE ;
 
 
 non terminal ArrayList<String> LIST_IDS;
@@ -68,21 +80,132 @@ non terminal ArrayList<ArrayList<String>> LIST_TRANSACTIONSP_AP;
 non terminal ArrayList<ArrayList<String>> LIST_ID_TRANSACTIONS_AP;
 non terminal ArrayList<ArrayList<String>> ID_TRANSACTIONS_AP;
 non terminal ArrayList<ArrayList<String>> LIST_OR_BEFORE_AP;
-
+non terminal String SYMBOLS;
+non terminal VER_AUTOMATAS;
+non terminal SYNTAX_COMPLETE;
+non terminal PROGRAM_COMPLETE;
+non terminal PROGRAM_Syntax;
+non terminal DES_AUTOMATAS;
+non terminal VAL_AUTOMATA;
 
 start with PROGRAM;
 
 
-PROGRAM ::= AFD_DECLARACION | Syntax_AP
+PROGRAM ::= PROGRAM_Syntax
+;
+
+PROGRAM_Syntax ::= SYNTAX_COMPLETE
+;
+
+SYNTAX_COMPLETE ::= SYNTAX_COMPLETE PROGRAM_COMPLETE | PROGRAM_COMPLETE
+;
+
+PROGRAM_COMPLETE ::= Syntax_AP_P | AFD_DECLARACION | VER_AUTOMATAS | DES_AUTOMATAS | VAL_AUTOMATA
+| error PROGRAM_COMPLETE
+;
+
+DES_AUTOMATAS ::= R_DESAUTOMATAS PAR_OPEN ID:nombre PAR_CLOSE SEMICOLON
+{:
+    boolean exists = sintax.listaAutomatas.stream()
+            .anyMatch(a -> a.getNombre().equals(nombre));
+    if(!exists){
+        sintax.textAreaSalida.append("El automata ingresado no existe " + "\n");
+    }else{
+    
+    for(Automata automata : sintax.listaAutomatas){
+        if (automata.getNombre().equals(nombre)){
+            sintax.textAreaSalida.append(
+            "Nombre: " + automata.getNombre() + "\n" +
+            "\t" + "Tipo: " + automata.getTipo() + "\n"+
+            "\t" + "Estados: " + automata.getEstados() + "\n"+
+            "\t" + "Estado Inicial: " + automata.getEstadoInicial() + "\n"+
+            "\t" + "Alfabeto: " + automata.getAlfabeto() + "\n"+
+            "\t" + "Estados de Aceptacion: " + automata.getEstadosAceptacion() + "\n" +
+            "\t" + "Transiciones: " +  automata.getTrancisiones() + "\n"
+            );
+        }
+    }
+}
+    sintax.textAreaSalida.append("---------------------------------------------------------------------------------" + "\n");
+:}
+;
+
+VER_AUTOMATAS ::= R_VERAUTOMATAS PAR_OPEN PAR_CLOSE SEMICOLON
+{:
+    
+    for(Automata automata : sintax.listaAutomatas){
+        sintax.textAreaSalida.append(automata.getNombre() +  "\t" + automata.getTipo() + "\n");
+    }
+    sintax.textAreaSalida.append("---------------------------------------------------------------------------------" + "\n");
+:}
+
+;
+VAL_AUTOMATA ::= ID:nombre PAR_OPEN STRING:cadena PAR_CLOSE SEMICOLON
+{:
+    
+    boolean exists = sintax.listaAutomatas.stream()
+            .anyMatch(a -> a.getNombre().equals(nombre));
+    if(exists && !cadena.isEmpty() && !cadena.equals("")){
+        for(Automata automata : sintax.listaAutomatas){
+            if (automata.getNombre().equals(nombre)){
+                if(automata.validate(cadena.substring(1, cadena.length() - 1))){
+
+                    sintax.textAreaSalida.append(nombre +  "\t" + cadena +  "\t"  + "Cadena Valida" + "\n");
+
+                } else {
+
+                    sintax.textAreaSalida.append(nombre +  "\t" + cadena +  "\t"  + "Cadena NO Valida" + "\n");
+                }
+
+                 try {
+                       if(automata instanceof AFD){
+                           ((AFD) automata).exportarGraficaValidar(java.nio.file.Paths.get("REPORTE" + nombre + " - " + cadena.substring(1, cadena.length() - 1)), cadena.substring(1, cadena.length() - 1));
+                           sintax.textAreaSalida.append("Grafico generado correctamente \n");
+                       } 
+
+                        if(automata instanceof AP){
+                           ((AP) automata).exportarGrafica(java.nio.file.Paths.get("REPORTE" + nombre + " - " + cadena.substring(1, cadena.length() - 1)), cadena.substring(1, cadena.length() - 1));
+                           sintax.textAreaSalida.append("Grafico generado correctamente \n");
+                       } 
+
+
+                   } catch (Exception e){
+                       sintax.textAreaSalida.append("Error en generar el grafico \n");
+                       e.printStackTrace();
+                    }
+                    sintax.textAreaSalida.append("---------------------------------------------------------------------------------" + "\n");
+
+            }
+        }
+    } else {
+        sintax.textAreaSalida.append("Automata No existe o la cadena no es valida" + "\n");
+        sintax.textAreaSalida.append("---------------------------------------------------------------------------------" + "\n");
+    }
+:}
 ;
 Syntax_AP_P ::= Syntax_AP
 ;
 AFD_DECLARACION ::= LESS R_AFD R_NAME EQUAL STRING:nombre GREATHER CONTENT_AFD:contenido AFD_CLOSE
 {:  
+     if (sintax.skipCurrentDeclaration) {
+        sintax.skipCurrentDeclaration = false;
+        RESULT = null;
+    }else {
     
-    boolean exists = sintax.listaAFD.stream()
-            .anyMatch(a -> a.getNombre().equals(nombre));
+    Boolean flag = false;
+    if (contenido == null || contenido.getEstados().isEmpty() || contenido.getAlfabeto().isEmpty() || contenido.getEstadosAceptacion().isEmpty() || contenido.getEstadoInicial() == null || contenido.getTransiciones().isEmpty()){
+        Modelo.ModeloMenu.ListaErrores.add(
+                new Modelo.Errors("Sintactico", 
+                    "El AFD '" + nombre + "' no pudo ser creado revisa en: ", 
+                    nombreleft, nombreright)
+            );
+        flag = true;
+        RESULT = null;
+    }
 
+    boolean exists = sintax.listaAutomatas.stream()
+            .anyMatch(a -> a.getNombre().equals(nombre.substring(1, nombre.length() - 1)));
+    
     if(exists){
         Modelo.ModeloMenu.ListaErrores.add(
                 new Modelo.Errors("Sintactico", 
@@ -90,9 +213,11 @@ AFD_DECLARACION ::= LESS R_AFD R_NAME EQUAL STRING:nombre GREATHER CONTENT_AFD:c
                     nombreleft, nombreright)
             );
         RESULT = null;
-    } else {
+    } else if (!flag) {
         AFD afd = new AFD();
-        afd.setNombre(nombre);
+        afd.setNombre(nombre.substring(1, nombre.length() - 1));
+        afd.setTipo("Automata Finito Determinista");
+
         
         for (String e: contenido.getEstados()){
 
@@ -108,7 +233,7 @@ AFD_DECLARACION ::= LESS R_AFD R_NAME EQUAL STRING:nombre GREATHER CONTENT_AFD:c
         for (String ea: contenido.getEstadosAceptacion()){
             afd.addEstadoAcept(ea);
         }
-
+        
         for(ArrayList<String> tr : contenido.getTransiciones()){
 
             String origen = tr.get(0);
@@ -121,24 +246,141 @@ AFD_DECLARACION ::= LESS R_AFD R_NAME EQUAL STRING:nombre GREATHER CONTENT_AFD:c
                 afd.addTransicion(origen, simbolo, destino);
             }
         }
-        sintax.listaAFD.add(afd);
-
+        
+        sintax.listaAutomatas.add(afd);
+        
         RESULT = afd;
+        sintax.textAreaSalida.append("AUTOMATA AFD " + (nombre.substring(1, nombre.length() - 1)) + " creado correctamente"+"\n");
+         sintax.textAreaSalida.append(
+            "Nombre: " + afd.getNombre() + "\n" +
+            "\t" + "Tipo: " + afd.getTipo() + "\n"+
+            "\t" + "Estados: " + afd.getEstados() + "\n"+
+            "\t" + "Estado Inicial: " + afd.getEstadoInicial() + "\n"+
+            "\t" + "Alfabeto: " + afd.getAlfabeto() + "\n"+
+            "\t" + "Estados de Aceptacion: " + afd.getEstadosAceptacion() + "\n" +
+            "\t" + "Transiciones: " +  afd.getTrancisiones() + "\n"
+            );
+        try {
+           afd.exportarGrafica(java.nio.file.Paths.get("REPORTE" + nombre.substring(1, nombre.length() - 1)));
+           sintax.textAreaSalida.append("Grafico generado correctamente \n");
+       } catch (Exception e){
+           sintax.textAreaSalida.append("Error en generar el grafico \n");
+           e.printStackTrace();
+        }
+        sintax.textAreaSalida.append("---------------------------------------------------------------------------------" + "\n");
+        
+                
+    } else {
+        RESULT = null;
     }
     
-    
+    }
 :}
+
 ;
 
-Syntax_AFD ::= LESS R_AFD R_NAME EQUAL STRING:s GREATHER CONTENT_AFD AFD_CLOSE 
-{:
-    
-:}
-;
 Syntax_AP ::= LESS R_AP R_NAME EQUAL STRING:nombre GREATHER CONTENT_AP:contenido AP_CLOSE
-{:
+{:  
+    if (sintax.skipCurrentDeclaration) {
+        sintax.skipCurrentDeclaration = false;
+        RESULT = null;
+    }else {
+    Boolean flag = false;
+    if (contenido == null || contenido.getEstados().isEmpty() || contenido.getAlfabeto().isEmpty() || contenido.getEstadosAceptacion().isEmpty() || contenido.getEstadoInicial() == null || contenido.getTransiciones().isEmpty() || contenido.getSimboloPila().isEmpty()){
+        Modelo.ModeloMenu.ListaErrores.add(
+                new Modelo.Errors("Sintactico", 
+                    "El AP '" + nombre + "' no pudo ser creado revisa en: ", 
+                    nombreleft, nombreright)
+            );
+        flag = true;
+        RESULT = null;
+    }
+
+    boolean exists = sintax.listaAutomatas.stream()
+            .anyMatch(a -> a.getNombre().equals(nombre.substring(1, nombre.length() - 1)));
+    
+    if(exists){
+        Modelo.ModeloMenu.ListaErrores.add(
+                new Modelo.Errors("Sintactico", 
+                    "El nombre del AP '" + nombre + "' ya esta en uso", 
+                    nombreleft, nombreright)
+            );
+        RESULT = null;
+    } else if (!flag) {
+        AP ap = new AP();
+        ap.setNombre(nombre.substring(1, nombre.length() - 1));
+        ap.setTipo("Automata de Pila");
+
+        for (String e: contenido.getEstados()){
+
+            ap.setEstados(e);
+        }
+
+        for (String a: contenido.getAlfabeto()){
+            ap.setAlfabeto(a);
+        }
+
+        ap.setEstadoInicial(contenido.getEstadoInicial());
+
+        for (String ea: contenido.getEstadosAceptacion()){
+            ap.setEstadosAceptacion(ea);
+        }
+
+        for (String sp: contenido.getSimboloPila()){
+            ap.setSimbolosPila(sp);
+        }
+
+        for(ArrayList<String> tr : contenido.getTransiciones()){
+            
+           
+            String origen = tr.get(0);
+            
+            for(int i = 1; i< tr.size(); i+=4){
+                String simboloEntrada = tr.get(i);
+                
+                String simboloExtrae = tr.get(i+1);
+                String estadoDestino = tr.get(i+2);
+                String SimboloInserta = tr.get(i+3);
+               
+                
+
+
+
+                ap.setTrancisiones(origen, simboloEntrada, simboloExtrae,estadoDestino,SimboloInserta);
+            }
+           
+        }
+        
+        sintax.listaAutomatas.add(ap);
+        RESULT = ap;
+
+        sintax.textAreaSalida.append("AUTOMATA AP " + (nombre.substring(1, nombre.length() - 1)) + " creado correctamente"+"\n");
+         sintax.textAreaSalida.append(
+            "Nombre: " + ap.getNombre() + "\n" +
+            "\t" + "Tipo: " + ap.getTipo() + "\n"+
+            "\t" + "Estados: " + ap.getEstados() + "\n"+
+            "\t" + "Estado Inicial: " + ap.getEstadoInicial() + "\n"+
+            "\t" + "Alfabeto: " + ap.getAlfabeto() + "\n"+
+            "\t" + "Estados de Aceptacion: " + ap.getEstadosAceptacion() + "\n" +
+            "\t" + "Transiciones: " +  ap.getTrancisiones() + "\n" +
+            "\t" + "Simbolos de pila: " +  ap.getSimbolosPila() + "\n"
+
+            );
+        try {
+           ap.exportarGraficaAP(java.nio.file.Paths.get("REPORTE" + nombre.substring(1, nombre.length() - 1)));
+           sintax.textAreaSalida.append("Grafico generado correctamente \n");
+       } catch (Exception e){
+           sintax.textAreaSalida.append("Error en generar el grafico \n");
+           e.printStackTrace();
+        }
+        sintax.textAreaSalida.append("---------------------------------------------------------------------------------" + "\n");
+    } else {
+        RESULT = null;
+    }
+    }
     
 :}
+
 ;
 CONTENT_AFD ::= LIST_CONFIG:cfga  R_TRANSICIONES COLON LIST_TRANSATIONS:listT
 {:
@@ -166,10 +408,11 @@ CONTENT_AFD ::= LIST_CONFIG:cfga  R_TRANSICIONES COLON LIST_TRANSATIONS:listT
     RESULT = content;
     
 :}
+
 ;
 CONTENT_AP ::= LIST_CONFIG:lcg  R_TRANSICIONES COLON LIST_TRANSATIONS_AP:listAP
 {:
-    System.out.println("HOLAA DESDE AQUI");
+    
     APContent contentAP = new APContent();
     for(String[] cfg : lcg){
        
@@ -187,24 +430,34 @@ CONTENT_AP ::= LIST_CONFIG:lcg  R_TRANSICIONES COLON LIST_TRANSATIONS_AP:listAP
             case "P": contentAP.getSimboloPila().addAll(lista); break;
         }
     }
+    
+
+    for (ArrayList<String> t : listAP ){
+       
+        contentAP.addTransicion(t);
+    }
+    RESULT = contentAP;
    
 :} 
+
 ;
 LIST_TRANSATIONS_AP ::= LIST_ID_TRANSACTIONS_AP:lita LIST_TRANSACTIONSP_AP:litap
 {:
-        System.out.println("HOLAA DESDE AQUI TRANSICIONES 1 ");
+    
 
-    ArrayList<ArrayList<String>> tmp = new ArrayList<ArrayList<String>>();
-    tmp.addAll(lita);
+
+    ArrayList<ArrayList<String>> tmp = new ArrayList<>();
+    tmp.addAll(lita); 
     if (litap != null){
         tmp.addAll(litap);
     }
+   
     RESULT = tmp;
 :}
 ;
 LIST_TRANSACTIONSP_AP ::= LIST_ID_TRANSACTIONS_AP:lidta LIST_TRANSACTIONSP_AP:lidtap 
 {:
-    System.out.println("HOLAA DESDE AQUI TRANSICIONES 2 ");
+    
     ArrayList<ArrayList<String>> tmp = new ArrayList<ArrayList<String>>();
     tmp.addAll(lidta);
     if (lidtap != null){
@@ -216,19 +469,34 @@ LIST_TRANSACTIONSP_AP ::= LIST_ID_TRANSACTIONS_AP:lidta LIST_TRANSACTIONSP_AP:li
 {:
     RESULT = new ArrayList<ArrayList<String>>();
 :}
+
 ;
 LIST_ID_TRANSACTIONS_AP ::= ID_TRANSACTIONS_AP:ita
 {:
-    System.out.println("HOLAA DESDE AQUI TRANSICIONES 3 ");
+   
     RESULT = ita;
 :}
 ;
-ID_TRANSACTIONS_AP ::= ID PAR_OPEN SYMBOLS PAR_CLOSE PROD PAR_OPEN SYMBOLS PAR_CLOSE COMMA SYMBOLS COLON PAR_OPEN SYMBOLS PAR_CLOSE LIST_OR_BEFORE_AP:listap SEMICOLON
+ID_TRANSACTIONS_AP ::= ID:i PAR_OPEN SYMBOLS:sym1 PAR_CLOSE PROD PAR_OPEN SYMBOLS:sym2 PAR_CLOSE COMMA SYMBOLS:sym3 COLON PAR_OPEN SYMBOLS:sym4 PAR_CLOSE LIST_OR_BEFORE_AP:listap SEMICOLON 
 {:
-    System.out.println("HOLAA DESDE AQUI TRANSICIONES 3.5 ");
+    
     ArrayList<ArrayList<String>> tmp = new ArrayList<>();
-    tmp.addAll(listap);
-   
+    ArrayList<String> arr = new ArrayList<>();
+    arr.add(i);
+    arr.add(sym1);
+    arr.add(sym2);
+    arr.add(sym3);
+    arr.add(sym4);
+    
+
+    if(listap != null && !listap.isEmpty()){
+        for(ArrayList<String> alt : listap){
+            arr.addAll(alt);
+        }
+    } 
+
+    tmp.add(arr);
+
     RESULT = tmp;
 :}
 ;
@@ -236,26 +504,22 @@ SYMBOLS ::= ID:i {: RESULT = i; :} | DOLLAR:d {: RESULT = d; :} | HASTAG:h {: RE
 ;
 LIST_OR_BEFORE_AP ::= OR LIST_STACK_AP:lap LIST_OR_BEFORE_AP:lobp 
 {:
-    System.out.println("HOLAA DESDE AQUI TRANSICIONES 4 ");
-    ArrayList<ArrayList<String>> list = new ArrayList<ArrayList<String>>();
-    ArrayList<String> alt = new ArrayList<String>(lap);
-
-    list.add(alt);
+    
+    ArrayList<ArrayList<String>> result = new ArrayList<>();
+    result.add(new ArrayList<>(lap));   
     if (lobp != null){
-        list.addAll(lobp);
+        result.addAll(lobp);            
     }
-   
-    RESULT = list;
+    RESULT = result;
 :}
 |
 {:
-    RESULT =  new ArrayList<String>();
+    RESULT = new ArrayList<ArrayList<String>>(); 
 :}
-    
-; 
+;
 LIST_STACK_AP ::= STATE_STACK_AP:ssa LIST_STACKP_AP:lsap
 {:
-    System.out.println("HOLAA DESDE AQUI STACK 1 ");
+    
     ArrayList<String> tmp = new ArrayList<String>();
     tmp.addAll(ssa);
     if (lsap != null){
@@ -267,7 +531,7 @@ LIST_STACK_AP ::= STATE_STACK_AP:ssa LIST_STACKP_AP:lsap
 ;
 LIST_STACKP_AP ::= STATE_STACK_AP:ssa LIST_STACKP_AP:lsap 
 {:
-    System.out.println("HOLAA DESDE AQUI STACK 2 ");
+   
     ArrayList<String> tmp = new ArrayList<String>();
     tmp.addAll(ssa);
     if (lsap != null){
@@ -278,17 +542,29 @@ LIST_STACKP_AP ::= STATE_STACK_AP:ssa LIST_STACKP_AP:lsap
 :} 
 | 
 {:
-    RESULT = new ArrayList<ArrayList<String>>();
+    RESULT = new ArrayList<String>();
 :} 
 ;
-STATE_STACK_AP ::= PAR_OPEN SYMBOLS PAR_CLOSE PROD PAR_OPEN SYMBOLS PAR_CLOSE COMMA SYMBOLS COLON PAR_OPEN SYMBOLS PAR_CLOSE 
+STATE_STACK_AP ::= PAR_OPEN SYMBOLS:in PAR_CLOSE PROD PAR_OPEN SYMBOLS:pop PAR_CLOSE COMMA SYMBOLS:next COLON PAR_OPEN SYMBOLS:push PAR_CLOSE
+{:
+    ArrayList<String> transicion = new ArrayList<>();
+    transicion.add(in);     
+    transicion.add(pop);    
+    transicion.add(next);   
+    transicion.add(push);   
+    RESULT = transicion;
+:}
 ;
+
 
 LIST_CONFIG ::= LIST_AFD:cfg LIST_CONFIGP:cfgp
 {:
-    System.out.println("HOLAA DESDE AQUI CONFIG 1 ");
+    
     ArrayList<String[]> tmp = new ArrayList<>();
-    tmp.addAll(cfg);
+    if(cfg != null){
+        tmp.addAll(cfg);
+    }
+    
     if(cfgp != null){
         tmp.addAll(cfgp);
     }
@@ -297,9 +573,12 @@ LIST_CONFIG ::= LIST_AFD:cfg LIST_CONFIGP:cfgp
 ;
 LIST_CONFIGP ::= LIST_AFD:cfg LIST_CONFIGP:cfgp 
 {:
-System.out.println("HOLAA DESDE AQUI CONFIG 2 ");
+
     ArrayList<String[]> tmp = new ArrayList<>();
-    tmp.addAll(cfg);
+    if(cfg != null){
+        tmp.addAll(cfg);
+    }
+    
     if(cfgp != null){
         tmp.addAll(cfgp);
     }
@@ -311,13 +590,19 @@ System.out.println("HOLAA DESDE AQUI CONFIG 2 ");
 :}
 ;
 LIST_AFD ::= ID_ASIGN:cfg
-{:
+{:  
     ArrayList<String[]> list = new ArrayList<>();
-    list.add(cfg);
+    if(cfg != null){
+        list.add(cfg);
+    }
+    
     RESULT = list;
+    
+    
+    
 :}
 ;
-ID_ASIGN ::= ID:i EQUAL KEY_OPEN LIST_IDS:list KEY_CLOSE SEMICOLON
+ID_ASIGN ::= ID:i EQUAL KEY_OPEN LIST_IDS:list KEY_CLOSE SEMICOLON 
 {:
     String[] arr = new String[list.size() +1 ];
     arr[0] = i;
@@ -329,6 +614,7 @@ ID_ASIGN ::= ID:i EQUAL KEY_OPEN LIST_IDS:list KEY_CLOSE SEMICOLON
     RESULT = arr;
     
 :}
+
 ;
 LIST_IDS ::= STATE_ASSING:s STATE_ASIGNP:p
 {:
@@ -444,7 +730,15 @@ STATE_FOLLOWSP ::= COMMA STATE_FOLLOWS:sf STATE_FOLLOWSP:sfp
 ;
 STATE_FOLLOWS ::= ID:i {: RESULT = i; :} | INTEGER:num {: RESULT = num; :} 
 ;
-AFD_CLOSE ::= LESS CLOSE R_AFD GREATHER 
+AFD_CLOSE ::=   LESS CLOSE R_AFD GREATHER
+| error 
+{:
+    sintax.skipCurrentDeclaration = true;
+:}
 ;
 AP_CLOSE ::= LESS CLOSE R_AP GREATHER
+| error 
+{:
+    sintax.skipCurrentDeclaration = true;
+:}
 ;

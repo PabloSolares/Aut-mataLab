@@ -52,6 +52,8 @@ AFD {contador++; return new Yytoken(contador, yytext(),R_AFD, yyline+1 , yycolum
 AP {contador++; return new Yytoken(contador, yytext(),R_AP, yyline+1, yycolumn);}
 Nombre {contador++; return new Yytoken(contador, yytext(),R_NAME, yyline+1, yycolumn);}
 Transiciones {contador++; return new Yytoken(contador, yytext(),R_TRANSICIONES, yyline+1, yycolumn);}
+verAutomatas {contador++; return new Yytoken(contador, yytext(),R_VERAUTOMATAS, yyline+1, yycolumn);}
+desc {contador++; return new Yytoken(contador, yytext(),R_DESAUTOMATAS, yyline+1, yycolumn);}
 {L}({L}|{D})* {contador++; return new Yytoken(contador, yytext(), ID , yyline+1, yycolumn);}
 ("(-"{D}+")")|{D}+ {contador++; return new Yytoken(contador, yytext(), INTEGER , yyline+1, yycolumn);}
 ";" {contador++; return new Yytoken(contador, yytext(), SEMICOLON , yyline+1, yycolumn);}

@@ -34,6 +34,9 @@ AFD { return new Symbol(sym.R_AFD, yyline, yycolumn, yytext());}
 AP { return new Symbol(sym.R_AP, yyline, yycolumn, yytext());}
 Nombre {return new Symbol(sym.R_NAME, yyline, yycolumn, yytext());}
 Transiciones { return new Symbol(sym.R_TRANSICIONES, yyline, yycolumn, yytext());}
+verAutomatas { return new Symbol(sym.R_VERAUTOMATAS, yyline, yycolumn, yytext());}
+desc { return new Symbol(sym.R_DESAUTOMATAS, yyline, yycolumn, yytext());}
+
 {L}({L}|{D})* { return new Symbol(sym.ID, yyline, yycolumn,yytext());}
 ("(-"{D}+")")|{D}+ { return new Symbol(sym.INTEGER, yyline, yycolumn, yytext());}
 ";" { return new Symbol(sym.SEMICOLON, yyline, yycolumn, yytext());}
@@ -55,7 +58,7 @@ Transiciones { return new Symbol(sym.R_TRANSICIONES, yyline, yycolumn, yytext())
 ")" { return new Symbol(sym.PAR_CLOSE, yyline, yycolumn,yytext());}
 
 
-(\"{L}({L}|{D})*\") { return new Symbol(sym.STRING, yyline, yycolumn, yytext());}
+(\"{L}?{D}?({L}|{D})*\") { return new Symbol(sym.STRING, yyline, yycolumn, yytext());}
 (" "|\n|\t|\r)+ {/*Ignore*/}
 "//".* {/*Ignore*/}
 <YYINITIAL>"/*" {yybegin(COMMENT);}
