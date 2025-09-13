@@ -2,7 +2,7 @@
 <AFD Nombre="AFD_Simple">
     N = {S, F}; 
     T = {0, 1}; 
-    I = {S}; 
+    I = {S}; 德
     A = {F}; 
 Transiciones:
     S -> 0, F | 1, S ;
@@ -18,7 +18,7 @@ Transiciones:
 Transiciones:
     S -> 0, S | 1, A ;
     A -> 0, A | 1, S ;
-<AFD>
+</AFD>
 
 // Autómata de Pila: balance de un par de "ab"
 <AP Nombre="AP_ab">
@@ -46,7 +46,7 @@ Transiciones:
     A (a) -> ($), A : (a) ;
     A (b) -> (a), A : ($) ;
     A ($) -> (#), F : ($) ;
-<AP>
+</AP>
 
 // Pruebas de ejecución
 verAutomatas();

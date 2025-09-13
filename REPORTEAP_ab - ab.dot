@@ -1,0 +1,56 @@
+digraph AP_ab {
+rankdir=LR;
+node [shape=circle];
+  graph [labelloc=t, label="Cadena Evaluada: ab", fontsize=18];
+subgraph cluster0 {
+style=rounded;
+label="Paso 0\nEntrada: ab\nPila: [#]";
+"I0" [label="I" style=filled fillcolor=lightgreen];
+"P0" [label="P"];
+"F0" [label="F" peripheries=2];
+"I0" -> "P0" [label="$, $ → #"];
+"P0" -> "P0" [label="a, $ → a"];
+"P0" -> "P0" [label="b, a → $"];
+"P0" -> "F0" [label="$, # → $"];
+}
+subgraph cluster1 {
+style=rounded;
+label="Paso 1\nEntrada: ab\nPila: [#, #]";
+"I1" [label="I"];
+"P1" [label="P" style=filled fillcolor=lightgreen];
+"F1" [label="F" peripheries=2];
+"I1" -> "P1" [label="$, $ → #"];
+"P1" -> "P1" [label="a, $ → a"];
+"P1" -> "P1" [label="b, a → $"];
+"P1" -> "F1" [label="$, # → $"];
+}
+subgraph cluster2 {
+style=rounded;
+label="Paso 2\nEntrada: b\nPila: [#, #, a]";
+"I2" [label="I"];
+"P2" [label="P" style=filled fillcolor=lightgreen];
+"F2" [label="F" peripheries=2];
+"I2" -> "P2" [label="$, $ → #"];
+"P2" -> "P2" [label="a, $ → a"];
+"P2" -> "P2" [label="b, a → $"];
+"P2" -> "F2" [label="$, # → $"];
+}
+subgraph cluster3 {
+style=rounded;
+label="Paso 3\nEntrada: $\nPila: [#, #]";
+"I3" [label="I"];
+"P3" [label="P" style=filled fillcolor=lightgreen];
+"F3" [label="F" peripheries=2];
+"I3" -> "P3" [label="$, $ → #"];
+"P3" -> "P3" [label="a, $ → a"];
+"P3" -> "P3" [label="b, a → $"];
+"P3" -> "F3" [label="$, # → $"];
+}
+subgraph cluster4 {
+style=rounded;
+label="Paso 4\nEntrada: $ \nPila: $ (aceptada)";
+"I4" [label="I"];
+"P4" [label="P"];
+"F4" [label="F" peripheries=2 style=filled fillcolor=lightgreen];
+}
+}

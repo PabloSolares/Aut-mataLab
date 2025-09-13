@@ -67,6 +67,9 @@ public class ControladorMenu {
         this.vista.btnVerReportes.addActionListener((e) -> {
             this.reportes.initReport();
         });
+        this.vista.btnNuevo.addActionListener((e) -> {
+            this.vista.txtEntrada.setText("");
+        });
         
         this.vista.btnAbrir.addActionListener((e) -> {
              fileChooser.setCurrentDirectory(new File("."));
@@ -132,7 +135,7 @@ public class ControladorMenu {
                 s.parse();  
                 
                 
-                //System.out.println("TODO BIEN");
+                //System.out.println("TODO BIEN")
                 ArrayList<Automata> automatas = s.getlistaAutomatas();
                 
                 /*
@@ -178,12 +181,12 @@ public class ControladorMenu {
                 for (Yytoken tokenL : modelo.getListaTokens()) {
                     //System.out.println(tokenL.toString());
                 }
-*/
+
                 for (Errors errs : modelo.getListaErrores()) {
                     System.out.println(errs.toString());
                 }
                
-                
+                */
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(ControladorMenu.class.getName()).log(Level.SEVERE, null, ex);
             }

@@ -37,7 +37,7 @@ public class MenuVista extends javax.swing.JFrame {
         txtSalida = new javax.swing.JTextArea();
         jMenuBar1 = new javax.swing.JMenuBar();
         btnGuardar = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        btnNuevo = new javax.swing.JMenuItem();
         btnAbrir = new javax.swing.JMenuItem();
         btnGuardarArchivo = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
@@ -72,13 +72,13 @@ public class MenuVista extends javax.swing.JFrame {
         btnGuardar.setText("Archivo");
         btnGuardar.setFont(new java.awt.Font("Segoe UI", 3, 14)); // NOI18N
 
-        jMenuItem1.setText("Nuevo");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        btnNuevo.setText("Nuevo");
+        btnNuevo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                btnNuevoActionPerformed(evt);
             }
         });
-        btnGuardar.add(jMenuItem1);
+        btnGuardar.add(btnNuevo);
 
         btnAbrir.setText("Abrir");
         btnGuardar.add(btnAbrir);
@@ -163,9 +163,9 @@ public class MenuVista extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+    private void btnNuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNuevoActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+    }//GEN-LAST:event_btnNuevoActionPerformed
 
     private void btnGuardarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGuardarArchivoActionPerformed
         // TODO add your handling code here:
@@ -210,6 +210,7 @@ public class MenuVista extends javax.swing.JFrame {
     public javax.swing.JMenuItem btnAbrir;
     public javax.swing.JMenu btnGuardar;
     public javax.swing.JMenuItem btnGuardarArchivo;
+    public javax.swing.JMenuItem btnNuevo;
     public javax.swing.JMenuItem btnProcesar;
     public javax.swing.JMenu btnPrograma;
     public javax.swing.JMenuItem btnVerReportes;
@@ -219,7 +220,6 @@ public class MenuVista extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTabbedPane jTabbedPane1;

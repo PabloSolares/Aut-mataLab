@@ -1,0 +1,12 @@
+digraph AP_anbn {
+  rankdir=LR;
+  node [shape=circle];
+  graph [labelloc=t, label="Automata: AP_anbn\nTipo: Automata de Pila\nEstados: [I, A, F]\nAlfabeto: [a, b]\nSimbolos Pila: [a, #]\nEstado Inicial: I\nEstados Aceptación: [F]\nTransiciones: {I=[($,$) -> (A,#)], A=[(a,$) -> (A,a), (b,a) -> (A,$), ($,#) -> (F,$)]}" fontsize=18];
+  _ini [shape=point,label=""];
+  _ini -> "I";
+  "F" [shape=doublecircle];
+  "I" -> "A" [label="$, $ → #"];
+  "A" -> "A" [label="a, $ → a"];
+  "A" -> "A" [label="b, a → $"];
+  "A" -> "F" [label="$, # → $"];
+}
